@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giám Sát Hành Trình</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      text-align: center;
+    }
+    iframe {
+      border: 3px solid #007bff;
+      border-radius: 10px;
+      width: 90%;
+      height: 70%;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      margin-bottom: 20px;
+    }
+    .title {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 20px;
+    }
+    .status {
+      margin-top: 10px;
+      font-size: 18px;
+      color: #555;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/paho-mqtt@1.0.3/mqttws31.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div class="title">Giám Sát Hành Trình</div>
+    <iframe 
+      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3918.474141542914!2d106.75833811428785!3d10.85074586078456!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x317527922e3b23f5%3A0xfff4068df245d605!2sThu%20Duc%20City%2C%20Ho%20Chi%20Minh%20City%2C%20Vietnam!5e0!3m2!1sen!2s!4v1639201508503!5m2!1sen!2s" 
+      title="Giám Sát Hành Trình"
+      allowfullscreen>
+    </iframe>
+    <div class="status" id="statusText">Trạng thái: Không ghi</div>
+  </div>
+
+  <script>
+    const statusText = document.getElementById('statusText');
+
+    // MQTT Configuration
+    const clientId = "web_" + Math.random().toString(16).substr(2, 8);
+    const host = "mqtt.era-platform.com"; // Thay bằng host MQTT của E-Ra nếu khác
+    const port = 8083; // Port MQTT WebSocket
+
+    const client = new Paho.MQTT.Client(host, port, clientId);
+
+    client.onConnectionLost = (responseObject) => {
+      console.log("Kết nối bị mất: " + responseObject.errorMessage);
+    };
+
+    client.onMessageArrived = (message) => {
+      console.log("Nhận thông báo: " + message.payloadString);
+
+      if (message.payloadString === "1") {
+        statusText.textContent = 'Trạng thái: Đang ghi hành trình';
+        // Xử lý khi bật ghi hành trình tại đây
+        console.log("Ghi hành trình được bật");
+      } else if (message.payloadString === "0") {
+        statusText.textContent = 'Trạng thái: Không ghi';
+        // Xử lý khi tắt ghi hành trình tại đây
+        console.log("Ghi hành trình được tắt");
+      }
+    };
+
+    const connectOptions = {
+      useSSL: true,
+      onSuccess: () => {
+        console.log("Đã kết nối MQTT");
+        // Đăng ký vào topic nhận trạng thái nút nhấn ảo
+        client.subscribe("v5/LeAnhKhoa/data/HANHTRINH"); // Thay bằng topic thực tế từ E-Ra
+      },
+      onFailure: (error) => {
+        console.error("Kết nối thất bại: ", error);
+      },
+    };
+
+    // Kết nối MQTT
+    client.connect(connectOptions);
+  </script>
+</body>
+</html>
